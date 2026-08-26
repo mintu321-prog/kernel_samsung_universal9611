@@ -1,0 +1,61 @@
+name: Build Grass Kernel
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            git \
+            python3 \
+            make \
+            bc \
+            bison \
+            flex \
+            libssl-dev \
+            libelf-dev \
+            curl \
+            pkg-config \
+            m4 \
+            libtool \
+            automake \
+            autoconf \
+            unzip \
+            zip
+
+      - name: Setup WeebX Clang
+        run: |
+          git clone --depth=1 https://github.com/XSans0/WeebX-Clang.git toolchain
+
+      - name: Check toolchain
+        run: |
+          chmod +x toolchain/bin/clang
+          ./toolchain/bin/clang --version
+
+      - name: Build M21 OneUI kernel
+        run: |
+          python3 build_kernel.py --oneui --target=m21
+
+      - name: Find kernel ZIP
+        run: |
+          echo "Build output:"
+          ls -lah
+          find . -maxdepth 2 -name "GrassKernel*.zip" -print
+
+      - name: Upload Kernel ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: GrassKernel-M21-OneUI
+          path: "GrassKernel*.zip"
+          if-no-files-found: error
